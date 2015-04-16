@@ -1,0 +1,12 @@
+todo
+
+- make it able to asynchronously recv()
+- can specify multiple ports on commandline
+- metrics, performance stats
+- UI better than dots
+- more packet types
+- implement UDP
+- can specify multiple ports on commandline
+- async IO or threading for the above
+- implement server-side
+
