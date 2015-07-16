@@ -42,7 +42,7 @@ void usage()
 
 void addToList(char *line)
 {
-  struct packetDescription *newpkt 
+  struct packetDescription *newpkt
     = (struct packetDescription*)malloc(sizeof(struct packetDescription));
   char *token;
   int field=0;
@@ -53,7 +53,7 @@ void addToList(char *line)
   }
   char *c;
   c = strchr(line,'\n');
-  *c = '\0'; 
+  *c = '\0';
   if (debug) {printf("Full Line: ----%s----\n",line);}
   token = strtok(line,":");
   while (token !=NULL)
@@ -82,11 +82,11 @@ void addToList(char *line)
     }
     token = strtok(NULL,":");
     field++;
-  } 
+  }
   if (head==NULL)
-  { 
+  {
     head = newpkt;
-    newpkt->next=NULL;  
+    newpkt->next=NULL;
   } else {
     newpkt->next = head;
     head = newpkt;
@@ -94,7 +94,7 @@ void addToList(char *line)
   return;
 }
 
-// abomination, we can do better 
+// abomination, we can do better
 int ascii_char_to_num(char c)
 {
   switch (c)
@@ -147,7 +147,7 @@ int ascii_char_to_num(char c)
       printf("\n++++++++++++++++++++++");
       printf("\nInvalid codes, exiting\n");
       printf("++++++++++++++++++++++\n\n");
-      exit(1); 
+      exit(1);
   }
 }
 
@@ -168,9 +168,9 @@ void get_raw_from_ascii_hex(char *input, unsigned char *output)
     c1 = ascii_char_to_num(ptr[i])*16;
     c2 = ascii_char_to_num(ptr[i+1]);
     result = c1+c2;
-    //printf("[0x%02x] ",result); 
+    //printf("[0x%02x] ",result);
     output[i/2] = (unsigned char)result;
-  } 
+  }
   output[i]='\0';
 }
 
@@ -224,7 +224,7 @@ void print_all_packets(int portnum)
     if (current->sport==0)
     {
       strcpy(sport_text,"*");
-    } 
+    }
     else
     {
       sprintf(sport_text,"%d",current->sport);
@@ -244,14 +244,14 @@ void print_all_packets(int portnum)
     {
       strcpy(direction,"-->");
     }
-    sprintf(outtext,"%s/%s [ %s %s %s ]",current->l3,current->l4,sport_text,direction,dport_text); 
+    sprintf(outtext,"%s/%s [ %s %s %s ]",current->l3,current->l4,sport_text,direction,dport_text);
     outlen = strlen(outtext);
     for (i=24;i>outlen;i--) strcat(outtext," ");
     strcat(outtext,current->comment);
     printf("%s\n",outtext);
     current=current->next;
   }
-  return;  
+  return;
 }
 
 char * ascii_to_binary(char *input)
@@ -261,7 +261,7 @@ char * ascii_to_binary(char *input)
   if (debug) {printf("debug: called into ascii_to_binary with %d bytes\n",strlen(input));}
   if (debug) {printf("debug: ascii_to_binary in: %s\n",input);}
   unsigned char *output;
-  output = malloc((strlen(input)/2)+1); 
+  output = malloc((strlen(input)/2)+1);
   get_raw_from_ascii_hex(input,output);
   return output;
 }
@@ -279,18 +279,18 @@ unsigned char* do_fuzz(unsigned char *databuf, int data_buffer_len) //todo don't
     databuf[b] = c;
     if (debug) {printf("Changing byte %d to 0x%x\n",b,c);}
   }
-  return databuf; 
+  return databuf;
 }
 
 send_packet(unsigned char *databuf,int portnum,char *target_host, int data_buffer_len)
 {
   int sockfd;
   struct sockaddr_in dest;
-  
+
   sockfd = socket(AF_INET,SOCK_STREAM,0);
   if (sockfd <0)
   {
-    printf("Socket error\n");   
+    printf("Socket error\n");
     exit(errno);
   }
 
@@ -311,7 +311,7 @@ send_packet(unsigned char *databuf,int portnum,char *target_host, int data_buffe
     printf("Connect() error\n");
     exit(errno);
   }
- 
+
   if (debug) {printf("Sending %d bytes \n",data_buffer_len); }
   send(sockfd, databuf, data_buffer_len, 0);
   //write(sockfd, databuf, data_buffer_len);
@@ -343,14 +343,14 @@ void begin_fuzzer(int portnum, char *target_host)
         current=current->next;
         continue;
       }
-      data_buffer = ascii_to_binary(current->hexdata); 
+      data_buffer = ascii_to_binary(current->hexdata);
       data_buffer_len = (strlen(current->hexdata)/2);
       printf(".");
       fflush(stdout);
-      data_buffer = do_fuzz(data_buffer,data_buffer_len); 
+      data_buffer = do_fuzz(data_buffer,data_buffer_len);
       if (debug) {printf("Attempting to send data\n");}
       usleep(send_delay*1000);
-      send_packet(data_buffer,portnum,target_host,data_buffer_len); 
+      send_packet(data_buffer,portnum,target_host,data_buffer_len);
       free(data_buffer);
       current=current->next;
     }
@@ -366,7 +366,7 @@ int main(int argc, char **argv)
   int portnum=0;
   int c;
 	while ((c = getopt(argc, argv, "ldf:p:t:s:")) != -1)
-	{	
+	{
     switch (c)
     {
       case 'f':
@@ -423,6 +423,3 @@ int main(int argc, char **argv)
   }
   return 0;
 }
-  
-
-
