@@ -10,6 +10,7 @@
 int debug=0;
 int send_delay=0;
 int print_packets=0;
+int modify_payload=1;
 float FUZZ_RATIO = 0.05;
 
 struct packetDescription
@@ -36,6 +37,7 @@ void usage()
   printf("        -p portnum       specify target port for fuzzing\n");
   printf("        -t host          specify target host for fuzzing\n");
   printf("        -s milliseconds  specify a send delay \n");
+  printf("        -b               don't fuzz, send original packets and exit \n");
   exit(1);
 }
 
@@ -347,12 +349,20 @@ void begin_fuzzer(int portnum, char *target_host)
       data_buffer_len = (strlen(current->hexdata)/2);
       printf(".");
       fflush(stdout);
-      data_buffer = do_fuzz(data_buffer,data_buffer_len);
+      if (modify_payload)
+      {
+        data_buffer = do_fuzz(data_buffer,data_buffer_len);
+      }
       if (debug) {printf("Attempting to send data\n");}
       usleep(send_delay*1000);
       send_packet(data_buffer,portnum,target_host,data_buffer_len);
       free(data_buffer);
       current=current->next;
+    }
+    if (modify_payload==0)
+    {
+      printf("\n\nSent all packets unmodified, exiting\n\n");
+      exit(0);
     }
   }
 }
@@ -365,7 +375,7 @@ int main(int argc, char **argv)
   char *target_host = NULL;
   int portnum=0;
   int c;
-	while ((c = getopt(argc, argv, "ldf:p:t:s:")) != -1)
+	while ((c = getopt(argc, argv, "ldbf:p:t:s:")) != -1)
 	{
     switch (c)
     {
@@ -384,6 +394,9 @@ int main(int argc, char **argv)
         break;
       case 't':
         target_host = optarg;
+        break;
+      case 'b':
+        modify_payload = 0;
         break;
       case 's':
         send_delay = atoi(optarg);
