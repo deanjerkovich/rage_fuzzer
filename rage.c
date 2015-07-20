@@ -146,9 +146,8 @@ int ascii_char_to_num(char c)
     case 'f':
       return 15;
     default:
-      printf("\n++++++++++++++++++++++");
       printf("\nInvalid codes, exiting\n");
-      printf("++++++++++++++++++++++\n\n");
+      printf("Code: 0x%x\n",c);
       exit(1);
   }
 }
