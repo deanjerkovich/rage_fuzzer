@@ -1,2 +1,2 @@
 all:
-	gcc rage.c -g -o rage
+	gcc -o rage rage.c libmutant.c 

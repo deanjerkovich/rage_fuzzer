@@ -4,14 +4,24 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 #include <resolv.h>
 #include <time.h>
 
-int debug=0;
+#include "libmutant.h"
+#include "rage.h"
+
+int debug =0;
 int send_delay=0;
 int print_packets=0;
 int modify_payload=1;
+int packet_loop_counter=0;
+int packet_loop_counter_max=10;
 float FUZZ_RATIO = 0.05;
+
+// global socket for reuse across send calls
+int sockfd = NULL;
 
 struct packetDescription
 {
@@ -20,7 +30,7 @@ struct packetDescription
   int sport;
   int dport;
   char direction[4];
-  char hexdata[10000];
+  char hexdata[10000]; // TODO fix these...
   char comment[128];
   struct packetDescription *next;
 };
@@ -38,6 +48,8 @@ void usage()
   printf("        -t host          specify target host for fuzzing\n");
   printf("        -s milliseconds  specify a send delay \n");
   printf("        -b               don't fuzz, send original packets and exit \n");
+  printf("        -r               provide a seed for srand (repeat a fuzz run)\n");
+  printf("        -c               number of packets sent before forced reconnect\n");
   exit(1);
 }
 
@@ -96,7 +108,7 @@ void addToList(char *line)
   return;
 }
 
-// abomination, we can do better
+// TODO FFS abomination, we can do better
 int ascii_char_to_num(char c)
 {
   switch (c)
@@ -157,7 +169,8 @@ void get_raw_from_ascii_hex(char *input, unsigned char *output)
   if (debug) {printf("debug: get_raw_from_ascii_hex\n");}
   int bytelen;
   int i;
-  bytelen = strlen(input);
+  bytelen = strlen(input); 
+  if (debug) {printf("debug: input len: %d\n",bytelen);}
 
   char *ptr;
   ptr = input;
@@ -169,10 +182,10 @@ void get_raw_from_ascii_hex(char *input, unsigned char *output)
     c1 = ascii_char_to_num(ptr[i])*16;
     c2 = ascii_char_to_num(ptr[i+1]);
     result = c1+c2;
-    //printf("[0x%02x] ",result);
+    if (debug) {printf("[0x%02x] ",result);}
     output[i/2] = (unsigned char)result;
   }
-  output[i]='\0';
+  output[i/2]='\0';
 }
 
 void printByPortNo(int portNo)
@@ -257,8 +270,6 @@ void print_all_packets(int portnum)
 
 char * ascii_to_binary(char *input)
 {
-  //unsigned char *output;
-  //output = malloc(4096*sizeof(char));
   if (debug) {printf("debug: called into ascii_to_binary with %d bytes\n",strlen(input));}
   if (debug) {printf("debug: ascii_to_binary in: %s\n",input);}
   unsigned char *output;
@@ -267,72 +278,77 @@ char * ascii_to_binary(char *input)
   return output;
 }
 
-unsigned char* do_fuzz(unsigned char *databuf, int data_buffer_len) //todo don't permanently wreck all the data! or are we?
-{
-  int bytes_to_fuzz, i,b;
-  unsigned char c;
-  bytes_to_fuzz = (data_buffer_len * FUZZ_RATIO);
-  if (debug) printf("buflen: %d, bytes_to_fuzz: %d\n", data_buffer_len, bytes_to_fuzz);
-  for (i=0;i<bytes_to_fuzz;i++)
-  {
-    b = rand() % data_buffer_len;
-    c = rand() % 256;
-    databuf[b] = c;
-    if (debug) {printf("Changing byte %d to 0x%x\n",b,c);}
-  }
-  return databuf;
-}
 
-send_packet(unsigned char *databuf,int portnum,char *target_host, int data_buffer_len)
+void send_packet(unsigned char *databuf,int portnum,char *target_host, int data_buffer_len)
 {
-  int sockfd;
   struct sockaddr_in dest;
-
-  sockfd = socket(AF_INET,SOCK_STREAM,0);
-  if (sockfd <0)
-  {
-    printf("Socket error\n");
-    exit(errno);
-  }
+  int sendval;
 
   bzero((char *)&dest, sizeof(dest));
   dest.sin_family = AF_INET;
   dest.sin_port = htons(portnum);
 
-  //if (inet_addr(target_host, &dest.sin_addr.s_addr)==0)
-  if (inet_aton(target_host, &dest.sin_addr.s_addr)==0)
+  if (inet_aton(target_host, (struct in_addr *)&dest.sin_addr.s_addr)==0)
   {
     printf("Error with address\n");
     exit(errno);
   }
   if (debug) {printf("Addr: %s\n",target_host);}
-
-  if (connect(sockfd, (struct sockaddr*)&dest, sizeof(dest)) !=0)
+  if (debug) {printf("Send()ing %d bytes thru sock: 0x%x\n",data_buffer_len,sockfd); }
+  sendval = send(sockfd, databuf, data_buffer_len, MSG_NOSIGNAL);
+  if (sendval == -1)
   {
-    printf("Connect() error\n");
-    exit(errno);
+    if (debug) {printf("send() failed: %d, reconnecting\n",sendval);}
+    if (connect(sockfd, (struct sockaddr*)&dest, sizeof(dest)) !=0)
+    {
+      if (debug) {printf("\n\nConnect() error, try new socket");}
+      init_sock();
+      if (connect(sockfd, (struct sockaddr*)&dest, sizeof(dest)) !=0)
+      {
+        printf("\n\nConnect() error, exiting");
+        exit(errno);
+      }
+    }
+    sendval = send(sockfd, databuf, data_buffer_len, 0);
+    if (debug) {printf("send() retval after reconnect: %d\n",sendval);}
+  } 
+  if (debug) {printf("appears to have send() successfully\n");}
+  packet_loop_counter++;
+  if (packet_loop_counter>packet_loop_counter_max)
+  {
+    packet_loop_counter=0;
+    close(sockfd);
+    init_sock();
   }
-
-  if (debug) {printf("Sending %d bytes \n",data_buffer_len); }
-  send(sockfd, databuf, data_buffer_len, 0);
-  //write(sockfd, databuf, data_buffer_len);
-  close(sockfd);
   return;
+}
+
+void init_sock()
+{
+    sockfd = socket(AF_INET,SOCK_STREAM,0);
+    if (sockfd <0)
+    {
+      printf("Socket error\n");
+      exit(errno);
+    }
 }
 
 void begin_fuzzer(int portnum, char *target_host)
 {
   char port_print[8];
   unsigned char *data_buffer;
-  int data_buffer_len;
+  unsigned int data_buffer_len;
   int i=0;
+  int outbuflen=0;
+  char outbuffer[64];
+  int packets_sent=0;
   if (portnum==0)
   {
     strcpy(port_print,"ALL");
   } else {
     sprintf(port_print,"%d",portnum);
   }
-  srand(time(NULL));
+  init_sock();
   printf("[+] beginning fuzz run against: %s:%s\n\n",target_host,port_print);
   while (1)
   {
@@ -346,15 +362,25 @@ void begin_fuzzer(int portnum, char *target_host)
       }
       data_buffer = ascii_to_binary(current->hexdata);
       data_buffer_len = (strlen(current->hexdata)/2);
-      printf(".");
-      fflush(stdout);
+      if (packets_sent%100==0)
+      {
+        for(;outbuflen>0;outbuflen--)
+        {
+          printf("\b");
+        }
+        sprintf(outbuffer,"Sent %d packets",packets_sent);
+        outbuflen = strlen(outbuffer);
+        printf("%s",outbuffer);
+        fflush(stdout);
+      }
       if (modify_payload)
       {
-        data_buffer = do_fuzz(data_buffer,data_buffer_len);
+        data_buffer = do_fuzz_random(data_buffer,data_buffer_len);
       }
       if (debug) {printf("Attempting to send data\n");}
       usleep(send_delay*1000);
       send_packet(data_buffer,portnum,target_host,data_buffer_len);
+      packets_sent++;
       free(data_buffer);
       current=current->next;
     }
@@ -366,15 +392,36 @@ void begin_fuzzer(int portnum, char *target_host)
   }
 }
 
+void save_seed(int seed, char *fullCmdLine)
+{
+  time_t sec;
+  char *time_str;
+  sec = time(NULL);
+  time_str = ctime(&sec);
+  time_str[strlen(time_str)-1] = '\0';
+  FILE *seedFile = fopen("seeds.log","a");
+  fprintf(seedFile,"%s, cmd:%s seed was: %d\n",time_str,fullCmdLine,seed);
+  fclose(seedFile);
+}
+
 int main(int argc, char **argv)
 {
   FILE *fp;
-  printf("---rage against the network---\n");
+  printf("RAGE AGAINST THE NETWORK\n");
   char *fileName = NULL;
   char *target_host = NULL;
+  unsigned int supplied_seed =0;
   int portnum=0;
   int c;
-	while ((c = getopt(argc, argv, "ldbf:p:t:s:")) != -1)
+  char *fullCmdLine[128];
+  strcpy(fullCmdLine,argv[0]);
+  int i;
+  for (i=1;i<argc;i++)
+  {
+    strcat(fullCmdLine," ");
+    strcat(fullCmdLine,argv[i]);
+  }
+	while ((c = getopt(argc, argv, "ldbf:p:t:s:r:c:")) != -1)
 	{
     switch (c)
     {
@@ -400,6 +447,12 @@ int main(int argc, char **argv)
       case 's':
         send_delay = atoi(optarg);
         break;
+      case 'r':
+        supplied_seed=atoi(optarg);
+        break;
+      case 'c':
+        packet_loop_counter_max = atoi(optarg);
+        break;
       default:
         abort();
     }
@@ -407,6 +460,18 @@ int main(int argc, char **argv)
   if (fileName==NULL)
   {
     usage();
+  }
+  if (supplied_seed)
+  {
+    printf("[+] supplied seed: %d\n",supplied_seed);
+    save_seed(supplied_seed,fullCmdLine);
+    srand(supplied_seed);
+  } else
+  {
+    unsigned int seed = time(NULL);
+    printf("[+] seed: %d\n", seed);
+    save_seed(seed,fullCmdLine);
+    srand(seed);
   }
   printf("[+] opening: %s\n", fileName);
   fp = fopen(fileName,"r");
@@ -424,7 +489,6 @@ int main(int argc, char **argv)
   }
   getPacketDescriptions(fp);
   fclose(fp);
-  //printByPortNo(445);
   if (print_packets)
   {
     print_all_packets(portnum);

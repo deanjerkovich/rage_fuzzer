@@ -1,10 +1,21 @@
 todo
 
-- different mutations
+- code tidy up..!
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^
+- fix all the compiler errors!
+
+- randomize which packet is chosen to randomly string together handshake sequences
+
+- specific byte-range-offset mutation - target specific part of proto (libmutant)
+- configurable percent-mutate
+- different mutate strategies (radamsa)/libmutant
+
+- remote ssh process/log watch
+
 - implement UDP
-- async IO
+- event/poll IO
 - metrics, performance stats
-- UI better than dots
 - more L3,L4 network
 - server coverage tracing
- 
