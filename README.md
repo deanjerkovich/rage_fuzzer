@@ -24,3 +24,6 @@ todo
 
 ## doing a fuzz run
 todo
+
+## bugs found
+todo
