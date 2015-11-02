@@ -158,7 +158,7 @@ int ascii_char_to_num(char c)
     case 'f':
       return 15;
     default:
-      printf("\nInvalid char in hex, exiting\n");
+      printf("\nInvalid char in hex, exiting\n\n");
       printf("char: 0x%x\n",c);
       exit(1);
   }
@@ -305,7 +305,7 @@ void send_packet(unsigned char *databuf,int portnum,char *target_host, int data_
       init_sock();
       if (connect(sockfd, (struct sockaddr*)&dest, sizeof(dest)) !=0)
       {
-        printf("\n\nConnect() error, exiting");
+        printf("\n\nConnect() error, exiting\n\n");
         exit(errno);
       }
     }
