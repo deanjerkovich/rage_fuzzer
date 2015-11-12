@@ -32,8 +32,8 @@ struct packetDescription
   int sport;
   int dport;
   char direction[4];
-  char hexdata[10000]; // TODO fix these...
-  char comment[128];
+  char* hexdata; 
+  char* comment;
   struct packetDescription *next;
 };
 
@@ -90,9 +90,11 @@ void addToList(char *line)
       strcpy(newpkt->direction,token);
       if (debug) {printf("direction: %s\n",token);}
     } else if (field==5) {
+      newpkt->hexdata = malloc(strlen(token)+1);
       strcpy(newpkt->hexdata,token);
       if (debug) {printf("hexdata: %s\n",token);}
     } else if (field==6) {
+      newpkt->comment = malloc(strlen(token)+1);
       strcpy(newpkt->comment,token);
       if (debug) {printf("comment: %s\n",token);}
     }
