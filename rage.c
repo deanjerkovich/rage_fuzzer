@@ -21,7 +21,9 @@ int packet_loop_counter_max=10;
 float FUZZ_RATIO = 0.05;
 
 // global socket for reuse across send calls
-int sockfd = NULL;
+int sockfd = (int)NULL;
+
+void init_sock();
 
 struct packetDescription
 {
@@ -414,12 +416,12 @@ int main(int argc, char **argv)
   int portnum=0;
   int c;
   char *fullCmdLine[128];
-  strcpy(fullCmdLine,argv[0]);
+  strcpy((char *)fullCmdLine,argv[0]);
   int i;
   for (i=1;i<argc;i++)
   {
-    strcat(fullCmdLine," ");
-    strcat(fullCmdLine,argv[i]);
+    strcat((char *)fullCmdLine," ");
+    strcat((char *)fullCmdLine,argv[i]);
   }
 	while ((c = getopt(argc, argv, "ldbf:p:t:s:r:c:")) != -1)
 	{
@@ -464,13 +466,13 @@ int main(int argc, char **argv)
   if (supplied_seed)
   {
     printf("[+] supplied seed: %d\n",supplied_seed);
-    save_seed(supplied_seed,fullCmdLine);
+    save_seed(supplied_seed,(char *)fullCmdLine);
     srand(supplied_seed);
   } else
   {
     unsigned int seed = time(NULL);
     printf("[+] seed: %d\n", seed);
-    save_seed(seed,fullCmdLine);
+    save_seed(seed,(char *)fullCmdLine);
     srand(seed);
   }
   printf("[+] opening: %s\n", fileName);
