@@ -52,6 +52,7 @@ void usage()
   printf("        -b               don't fuzz, send original packets and exit \n");
   printf("        -r               provide a seed for srand (repeat a fuzz run)\n");
   printf("        -c               number of packets sent before forced reconnect\n");
+  printf("        -z               a dummy arg to ID different fuzzers on same host\n");
   exit(1);
 }
 
@@ -375,7 +376,7 @@ int main(int argc, char **argv)
     strcat((char *)fullCmdLine," ");
     strcat((char *)fullCmdLine,argv[i]);
   }
-	while ((c = getopt(argc, argv, "ldbf:p:t:s:r:c:")) != -1)
+	while ((c = getopt(argc, argv, "ldbf:p:t:s:r:c:z:")) != -1)
 	{
     switch (c)
     {
@@ -406,6 +407,9 @@ int main(int argc, char **argv)
         break;
       case 'c':
         packet_loop_counter_max = atoi(optarg);
+        break;
+      case 'z':
+        //do nothing - just for cmdline ID
         break;
       default:
         abort();
