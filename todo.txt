@@ -1,21 +1,16 @@
 todo
 
-- code tidy up..!
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-^^^^^^^^^^^^^
-^^^^^^^^^^^^^^^^^^
-- fix all the compiler errors!
-
 - randomize which packet is chosen to randomly string together handshake sequences
 
 - specific byte-range-offset mutation - target specific part of proto (libmutant)
 - configurable percent-mutate
 - different mutate strategies (radamsa)/libmutant
 
-- remote ssh process/log watch
-
 - implement UDP
 - event/poll IO
+
+- remote ssh process/log watch
+
 - metrics, performance stats
 - more L3,L4 network
 - server coverage tracing

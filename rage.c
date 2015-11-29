@@ -283,7 +283,7 @@ void init_sock()
     sockfd = socket(AF_INET,SOCK_STREAM,0);
     if (sockfd <0)
     {
-      printf("Socket error\n");
+      printf("\nSocket error, exiting\n");
       exit(errno);
     }
 }
