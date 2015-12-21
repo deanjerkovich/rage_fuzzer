@@ -19,6 +19,20 @@ a dumb protocol-unaware packet fuzzer/replayer
 * target process monitoring is left as an excersize to the reader
 * naive unconfigurable mutations
 
+## Usage
+Usage: rage [-d] -p <port> -t <target> -f <filename>
+        -f filename      file to read packet zoo from
+        -d               enable debug [excessive]
+        -l               print out all packets in file
+        -p portnum       specify target port for fuzzing
+        -t host          specify target host for fuzzing
+        -s milliseconds  specify a send delay 
+        -b               don't fuzz, send original packets and exit 
+        -r               provide a seed for srand (repeat a fuzz run)
+        -c               number of packets sent before forced reconnect
+        -z               a dummy arg to ID different fuzzers on same host
+
+
 ## packet file format
 todo
 
