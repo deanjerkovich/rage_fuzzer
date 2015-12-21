@@ -20,7 +20,7 @@ a dumb protocol-unaware packet fuzzer/replayer
 * naive unconfigurable mutations
 
 ## Usage
-Usage: rage [-d] -p <port> -t <target> -f <filename>
+```Usage: rage [-d] -p <port> -t <target> -f <filename>
         -f filename      file to read packet zoo from
         -d               enable debug [excessive]
         -l               print out all packets in file
@@ -32,7 +32,7 @@ Usage: rage [-d] -p <port> -t <target> -f <filename>
         -c               number of packets sent before forced reconnect
         -z               a dummy arg to ID different fuzzers on same host
 
-
+```
 ## packet file format
 todo
 
