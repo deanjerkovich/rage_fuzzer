@@ -12,12 +12,17 @@
 #include "libmutant.h"
 #include "rage.h"
 
+#define MAX_SOCKET_ERRORS 10
+#define MAX_CONNECT_ERRORS 10
+
 int debug =0;
 int send_delay=0;
 int print_packets=0;
 int modify_payload=1;
 int packet_loop_counter=0;
 int packet_loop_counter_max=10;
+int socket_errors=0;
+int connect_errors =0;
 float FUZZ_RATIO = 0.05;
 
 // global socket for reuse across send calls
@@ -260,8 +265,14 @@ void send_packet(unsigned char *databuf,int portnum,char *target_host, int data_
       init_sock();
       if (connect(sockfd, (struct sockaddr*)&dest, sizeof(dest)) !=0)
       {
-        printf("\n\nConnect() error, exiting\n\n");
-        exit(errno);
+        connect_errors++;
+        if (connect_errors>MAX_CONNECT_ERRORS)
+        {
+          printf("\n\nConnect() error, exiting\n\n");
+          exit(errno);
+        }
+        usleep(1000);
+        return;
       }
     }
     sendval = send(sockfd, databuf, data_buffer_len, 0);
@@ -283,8 +294,13 @@ void init_sock()
     sockfd = socket(AF_INET,SOCK_STREAM,0);
     if (sockfd <0)
     {
-      printf("\nSocket error, exiting\n");
-      exit(errno);
+      socket_errors +=1;
+      usleep(1000);
+      if (socket_errors>MAX_SOCKET_ERRORS)
+      {
+        printf("\n%d Socket errors, exiting\n",MAX_SOCKET_ERRORS);
+        exit(errno);
+      }
     }
 }
 

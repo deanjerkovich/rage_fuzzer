@@ -4,7 +4,7 @@ todo
 
 - specific byte-range-offset mutation - target specific part of proto (libmutant)
 - configurable percent-mutate
-- different mutate strategies (radamsa)/libmutant
+- different mutate strategies (radamsa)/libmutant +inject +bitflip +nullbyte
 
 - implement UDP
 - event/poll IO
