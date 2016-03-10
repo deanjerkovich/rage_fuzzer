@@ -304,6 +304,21 @@ void init_sock()
     }
 }
 
+int port_count(int portnum)
+{
+  int count=0;
+  current = head;
+  while (current->next != NULL)
+  {
+    if (current->dport == portnum)
+    {
+      count++;
+    }
+    current = current->next;
+  }
+  return count;
+}
+
 void begin_fuzzer(int portnum, char *target_host)
 {
   char port_print[8];
@@ -321,6 +336,11 @@ void begin_fuzzer(int portnum, char *target_host)
   }
   init_sock();
   printf("[+] beginning fuzz run against: %s:%s\n\n",target_host,port_print);
+  if (port_count(portnum)==0)
+  {
+    printf("ERR: we don't have any packets for this port. Exiting\n");
+    exit(1);
+  }
   while (1)
   {
     current = head;
