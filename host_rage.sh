@@ -8,7 +8,7 @@ then
   for portnum in `nmap $1 -sT | grep open | cut -d '/' -f 1`; 
     do 
     echo $portnum
-    screen -d -m ./rage -p $portnum -f ./master_packets.txt -t $1 
+    screen -S ragePort$portnum -d -m ./rage -p $portnum -f ./master_packets.txt -t $1 
     done;
 else
   echo 'must give me a target host. exiting'
