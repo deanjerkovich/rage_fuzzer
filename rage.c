@@ -26,7 +26,7 @@ int connect_errors =0;
 float FUZZ_RATIO = 0.05;
 
 // global socket for reuse across send calls
-int sockfd = (int)NULL;
+int sockfd = NULL;
 
 void init_sock();
 
@@ -71,6 +71,7 @@ void addToList(char *line)
   if (line[0]=='#')
   {
     if (debug) {printf("Bailing on line with comment\n");}
+    free(newpkt);
     return;
   }
   char *c;
@@ -228,9 +229,9 @@ void print_all_packets(int portnum)
   return;
 }
 
-char * ascii_to_binary(char *input)
+unsigned char * ascii_to_binary(char *input)
 {
-  if (debug) {printf("debug: called into ascii_to_binary with %d bytes\n",strlen(input));}
+  if (debug) {printf("debug: called into ascii_to_binary with %u bytes\n",(unsigned int)strlen(input));}
   if (debug) {printf("debug: ascii_to_binary in: %s\n",input);}
   unsigned char *output;
   output = malloc((strlen(input)/2)+1);
@@ -324,7 +325,6 @@ void begin_fuzzer(int portnum, char *target_host)
   char port_print[8];
   unsigned char *data_buffer;
   unsigned int data_buffer_len;
-  int i=0;
   int outbuflen=0;
   char outbuffer[64];
   int packets_sent=0;
@@ -476,7 +476,7 @@ int main(int argc, char **argv)
   }
   if (portnum==0)
   {
-    printf("[+] Port chosen: ALL\n",portnum);
+    printf("[+] Port chosen: ALL\n");
   } else
   {
     printf("[+] Port chosen: %d\n",portnum);

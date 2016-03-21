@@ -38,12 +38,14 @@ unsigned char* do_chunk_duplicate(unsigned char *databuf, unsigned int data_buff
   {
     location = data_buffer_len - chunk_len;
   }
-  // TODO  
+  // TODO 
+  retbuf=NULL;
+  return retbuf;
 }
 
 unsigned char* do_fuzz_random(unsigned char *databuf, unsigned int data_buffer_len)
 {
-  char *retbuf;
+  unsigned char *retbuf;
   retbuf = do_byte_percent_mutate(databuf, data_buffer_len);
   return retbuf;
 }
