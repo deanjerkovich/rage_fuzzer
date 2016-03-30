@@ -1,5 +1,7 @@
 todo
 
+- code tidy-up 
+
 - randomize which packet is chosen to randomly string together handshake sequences
 
 - specific byte-range-offset mutation - target specific part of proto (libmutant)
