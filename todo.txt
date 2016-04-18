@@ -1,6 +1,6 @@
 todo
 
-- code tidy-up 
+- TIDY UP / REFACTOR all code !
 
 - randomize which packet is chosen to randomly string together handshake sequences
 

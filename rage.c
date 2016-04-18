@@ -16,6 +16,7 @@
 #define MAX_CONNECT_ERRORS 10
 
 int debug =0;
+int udpmode=0;
 int send_delay=0;
 int print_packets=0;
 int modify_payload=1;
@@ -26,7 +27,7 @@ int connect_errors =0;
 float FUZZ_RATIO = 0.05;
 
 // global socket for reuse across send calls
-int sockfd = NULL;
+int sockfd = (int)NULL;
 
 void init_sock();
 
@@ -50,6 +51,7 @@ void usage()
   printf("Usage: rage [-d] -p <port> -t <target> -f <filename>\n");
   printf("        -f filename      file to read packet zoo from\n");
   printf("        -d               enable debug [excessive]\n");
+  printf("        -u               UDP mode\n");
   printf("        -l               print out all packets in file\n");
   printf("        -p portnum       specify target port for fuzzing\n");
   printf("        -t host          specify target host for fuzzing\n");
@@ -58,6 +60,7 @@ void usage()
   printf("        -r               provide a seed for srand (repeat a fuzz run)\n");
   printf("        -c               number of packets sent before forced reconnect\n");
   printf("        -z               a dummy arg to ID different fuzzers on same host\n");
+  printf("        -h               this help screen\n");
   exit(1);
 }
 
@@ -244,6 +247,7 @@ void send_packet(unsigned char *databuf,int portnum,char *target_host, int data_
 {
   struct sockaddr_in dest;
   int sendval;
+  int sendtoerr;
 
   bzero((char *)&dest, sizeof(dest));
   dest.sin_family = AF_INET;
@@ -256,28 +260,38 @@ void send_packet(unsigned char *databuf,int portnum,char *target_host, int data_
   }
   if (debug) {printf("Addr: %s\n",target_host);}
   if (debug) {printf("Send()ing %d bytes thru sock: 0x%x\n",data_buffer_len,sockfd); }
-  sendval = send(sockfd, databuf, data_buffer_len, MSG_NOSIGNAL);
-  if (sendval == -1)
+  if (udpmode) 
   {
-    if (debug) {printf("send() failed: %d, reconnecting\n",sendval);}
-    if (connect(sockfd, (struct sockaddr*)&dest, sizeof(dest)) !=0)
+    sendtoerr = sendto(sockfd,databuf,data_buffer_len,0,(struct sockaddr*)&dest,sizeof(dest));
+    if (sendtoerr < 0)
     {
-      if (debug) {printf("\n\nConnect() error, try new socket");}
-      init_sock();
-      if (connect(sockfd, (struct sockaddr*)&dest, sizeof(dest)) !=0)
-      {
-        connect_errors++;
-        if (connect_errors>MAX_CONNECT_ERRORS)
-        {
-          printf("\n\nConnect() error, exiting\n\n");
-          exit(errno);
-        }
-        usleep(1000);
-        return;
-      }
+      perror("sendto() failed");
+      exit(1);
+    } 
+  } else { 
+    sendval = send(sockfd, databuf, data_buffer_len, MSG_NOSIGNAL);
+   if (sendval == -1)
+   {
+     if (debug) {printf("send() failed: %d, reconnecting\n",sendval);}
+     if (connect(sockfd, (struct sockaddr*)&dest, sizeof(dest)) !=0)
+     {
+       if (debug) {printf("\n\nConnect() error, try new socket");}
+       init_sock();
+       if (connect(sockfd, (struct sockaddr*)&dest, sizeof(dest)) !=0)
+       {
+         connect_errors++;
+         if (connect_errors>MAX_CONNECT_ERRORS)
+         {
+           printf("\n\nConnect() error, exiting\n\n");
+           exit(errno);
+         }
+         usleep(1000);
+         return;
+       }
+     }
+     sendval = send(sockfd, databuf, data_buffer_len, 0);
+     if (debug) {printf("send() retval after reconnect: %d\n",sendval);}
     }
-    sendval = send(sockfd, databuf, data_buffer_len, 0);
-    if (debug) {printf("send() retval after reconnect: %d\n",sendval);}
   } 
   if (debug) {printf("appears to have send() successfully\n");}
   packet_loop_counter++;
@@ -292,7 +306,12 @@ void send_packet(unsigned char *databuf,int portnum,char *target_host, int data_
 
 void init_sock()
 {
-    sockfd = socket(AF_INET,SOCK_STREAM,0);
+    if (udpmode)
+    {
+      sockfd = socket(AF_INET,SOCK_DGRAM, IPPROTO_UDP);
+    } else {  
+      sockfd = socket(AF_INET,SOCK_STREAM,0);
+    }
     if (sockfd <0)
     {
       socket_errors +=1;
@@ -311,7 +330,9 @@ int port_count(int portnum)
   current = head;
   while (current->next != NULL)
   {
-    if (current->dport == portnum)
+    if (current->dport == portnum && 
+        ((udpmode && strcmp("UDP",current->l4)==0) || 
+          (!udpmode && strcmp("TCP",current->l4)==0)))
     {
       count++;
     }
@@ -346,8 +367,11 @@ void begin_fuzzer(int portnum, char *target_host)
     current = head;
     while (current!=NULL)
     {
-      if (current->dport!=portnum)
+      if (current->dport!=portnum || 
+        (udpmode && strcmp(current->l4,"UDP")!=0) ||
+        (!udpmode && strcmp(current->l4,"TCP")!=0))
       {
+        if (debug) printf("Skipping this packet..\n");
         current=current->next;
         continue;
       }
@@ -398,13 +422,13 @@ void save_seed(int seed, char *fullCmdLine)
 int main(int argc, char **argv)
 {
   FILE *fp;
-  printf("RAGE AGAINST THE NETWORK\n");
+  printf("rage network dumbfuzzer\n");
   char *fileName = NULL;
   char *target_host = NULL;
   unsigned int supplied_seed =0;
   int portnum=0;
   int c;
-  char *fullCmdLine[128];
+  char *fullCmdLine[128]; //todo
   strcpy((char *)fullCmdLine,argv[0]);
   int i;
   for (i=1;i<argc;i++)
@@ -412,10 +436,13 @@ int main(int argc, char **argv)
     strcat((char *)fullCmdLine," ");
     strcat((char *)fullCmdLine,argv[i]);
   }
-	while ((c = getopt(argc, argv, "ldbf:p:t:s:r:c:z:")) != -1)
+	while ((c = getopt(argc, argv, "uhldbf:p:t:s:r:c:z:")) != -1)
 	{
     switch (c)
     {
+      case 'h':
+        usage();
+        break;
       case 'f':
         fileName = optarg;
         break;
@@ -446,6 +473,9 @@ int main(int argc, char **argv)
         break;
       case 'z':
         //do nothing - just for cmdline ID
+        break;
+      case 'u':
+        udpmode=1;
         break;
       default:
         abort();
@@ -481,6 +511,8 @@ int main(int argc, char **argv)
   {
     printf("[+] Port chosen: %d\n",portnum);
   }
+  if (udpmode)
+    printf("[+] UDP mode enabled\n");
   getPacketDescriptions(fp);
   fclose(fp);
   if (print_packets)
