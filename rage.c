@@ -26,7 +26,6 @@ int socket_errors=0;
 int connect_errors =0;
 float FUZZ_RATIO = 0.05;
 
-// global socket for reuse across send calls
 int sockfd = (int)NULL;
 
 void init_sock();
@@ -168,7 +167,7 @@ void printByPortNo(int portNo)
 
 void getPacketDescriptions(FILE *fp)
 {
-  char line[12000];
+  char line[12000];//todo wtf
   void *r;
   int total_lines=0;
   r=fgets(line,12000,fp);
