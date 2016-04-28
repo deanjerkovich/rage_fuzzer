@@ -8,6 +8,7 @@
 #include <arpa/inet.h>
 #include <resolv.h>
 #include <time.h>
+#include <stdint.h>
 
 #include "libmutant.h"
 #include "rage.h"
@@ -26,7 +27,7 @@ int socket_errors=0;
 int connect_errors =0;
 float FUZZ_RATIO = 0.05;
 
-int sockfd = (int)NULL;
+int sockfd = (uintptr_t)NULL;
 
 void init_sock();
 
