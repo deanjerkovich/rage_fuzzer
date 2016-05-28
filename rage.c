@@ -16,6 +16,12 @@
 #define MAX_SOCKET_ERRORS 10
 #define MAX_CONNECT_ERRORS 10
 
+#if defined(__APPLE__) || defined(__MACH__)
+# ifndef MSG_NOSIGNAL
+#   define MSG_NOSIGNAL SO_NOSIGPIPE
+# endif
+#endif
+
 int debug =0;
 int udpmode=0;
 int send_delay=0;
