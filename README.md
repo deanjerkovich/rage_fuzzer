@@ -11,8 +11,7 @@ a dumb protocol-unaware packet fuzzer/replayer
 * comes with a collection of packets for common protocols ready to go
 
 ## Current status:
-* TCP only
-* IP only
+* IP only (TCP and UDP)
 * Client-side only
 * not particularly fast (single-thread blocking)
 * deterministic; fuzz-runs can be repeated given the seed of a prior run
