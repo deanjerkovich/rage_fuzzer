@@ -9,18 +9,19 @@
 
 unsigned char* do_byte_percent_mutate(unsigned char *databuf, unsigned int data_buffer_len)
 {
-	unsigned int bytes_to_fuzz, i, b;
-	unsigned char c;
+	unsigned int bytes_to_fuzz, i, location;
+	unsigned char mutatedbyte;
 	bytes_to_fuzz = (data_buffer_len * FUZZ_RATIO_PC);
 	for (i=0; i<bytes_to_fuzz; i++)
 	{
-		b = rand() % data_buffer_len;
-		c = rand() % 256;
-		databuf[b] = c;
+		location = rand() % data_buffer_len;
+		mutatedbyte = rand() % 256;
+		databuf[location] = mutatedbyte;
 	}
 	return databuf;
 }
 
+//TODO: incomplete
 unsigned char* do_chunk_duplicate(unsigned char *databuf, unsigned int data_buffer_len)
 {
   int chunk_len;
@@ -38,7 +39,6 @@ unsigned char* do_chunk_duplicate(unsigned char *databuf, unsigned int data_buff
   {
     location = data_buffer_len - chunk_len;
   }
-  // TODO 
   retbuf=NULL;
   return retbuf;
 }

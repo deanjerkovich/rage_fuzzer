@@ -1,9 +1,10 @@
 todo
 
-- TIDY UP / REFACTOR all code !
+- tidy up/refactor: consistent style, fix shitty code, refactor
 
 - randomize which packet is chosen to randomly string together handshake sequences
 
+--libmutant--
 - specific byte-range-offset mutation - target specific part of proto (libmutant)
 - configurable percent-mutate
 - different mutate strategies (radamsa)/libmutant +inject +bitflip +nullbyte
