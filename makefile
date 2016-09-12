@@ -1,2 +1,2 @@
 all:
-	gcc -Wall -o rage rage.c libmutant.c 
+	$(CC) -Wall -o rage rage.c libmutant.c 
