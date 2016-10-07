@@ -1,6 +1,7 @@
 todo
 
 - tidy up/refactor: consistent style, fix shitty code, refactor
+- debug should be -D
 
 - randomize which packet is chosen to randomly string together handshake sequences
 
