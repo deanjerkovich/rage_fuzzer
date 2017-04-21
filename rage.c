@@ -63,7 +63,7 @@ void usage()
   printf("        -t host          specify target host for fuzzing\n");
   printf("        -s milliseconds  specify a send delay \n");
   printf("        -b               don't fuzz, send original packets and exit \n");
-  printf("        -r               provide a seed for srand (repeat a fuzz run)\n");
+  printf("        -r seed          provide a seed for srand (repeat a fuzz run)\n");
   printf("        -c               number of packets sent before forced reconnect\n");
   printf("        -z               a dummy arg to ID different fuzzers on same host\n");
   printf("        -h               this help screen\n");

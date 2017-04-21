@@ -1,5 +1,7 @@
 todo
 
+- exit after N packets/seconds (to enable re-seed)
+
 - tidy up/refactor: consistent style, fix shitty code, refactor
 - debug should be -D
 
